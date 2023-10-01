@@ -17,11 +17,17 @@ RUN apt update && \
 # install npm dependencies
 RUN npm install -g ${NPM_DEPS}
 
+ENV APP_DIR /usr/src/app
+RUN mkdir -p ${APP_DIR}
+
+WORKDIR ${APP_DIR}
+
+
 # copy scripts
-COPY ./bin/entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY ./bin/docker-entrypoint /usr/local/bin/docker-entrypoint
 
 # default entrypoint
-ENTRYPOINT ['sh', '-c', 'entrypoint.sh']
+ENTRYPOINT ["docker-entrypoint"]
 
 # default command
-CMD ['bash']
+CMD ["/usr/bin/bash"]
