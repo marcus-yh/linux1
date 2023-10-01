@@ -7,6 +7,9 @@ export
 build:
 	docker-compose build
 
+run:
+	docker-compose run debian
+
 .PHONY: test
 unit-test:
 	echo testing
