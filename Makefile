@@ -8,7 +8,7 @@ build:
 	docker-compose build
 
 run:
-	docker-compose run debian
+	docker-compose --verbose run debian
 
 .PHONY: test
 unit-test:
