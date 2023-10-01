@@ -1,0 +1,63 @@
+#!/bin/bash
+# back_dir
+
+set -eux
+
+# Övning 4.1:
+#
+# 1. Skriv ett skript med namnet `back_dir` som tar ett argument (katalogens namn).
+# 2. Skriptet ska först verifiera att ett argument har angetts.
+#    Om inget argument har angetts, skriv en hjälptext till stderr som informerar
+#    användaren om detta och avsluta skriptet med en felstatus.
+# 3. Därefter ska skriptet verifiera att angivet argument är en existerande katalog.
+#    Om detta inte stämmer, skriv en annan hjälptext till stderr som informerar
+#    användaren om detta och avsluta skriptet med en felstatus.
+# 4. Om en backup med namnet <katalog>.bak redan finns, döp om den till <katalog>.bak2.
+#    Radera befintlig <katalog>.bak2 om den existerar innan omdöpningen.
+# 5. Skapa en backup av katalogen och namnge den till <katalog>.bak.
+#    Under kopieringsprocessen ska progressen visas på stdout där varje
+#    filnamn skrivs ut under tiden de kopieras.
+# 6. Testa ditt skript med olika scenarion för att verifiera att det fungerar korrekt.
+# 
+# Tips: Kom ihåg att använda kommandot exit för att avsluta skriptet med en felstatus
+#       om något går fel. Du kan använda cp kommandot med lämpliga flaggor för att kopiera
+#       katalogen och visa kopieringsprogress
+
+
+function verify_argument()
+	# verify that the script is called with an argument
+	if [ -z "$1" ];then
+		echo "Script must be called with an argument \
+			that specifies a path to an existing directory!"
+		exit 1
+	fi
+
+function verify_dir_exists(){
+	# verify that specified directory path exist
+	if [ ! -d "${dir_path}" ]; then
+		echo "Directory ${dir_path} does not exist or is not a directory!" >&2
+		exit 1
+	fi
+}
+
+function prepare_for_backup(){
+	# check if existing backup directories already exist
+	primary_backup_dir="${dir_path}"
+	secondary_backup_dir="${dir_path}2"
+	if [ -d "${primary_backup_dir}" ]; then
+		if [ -d "${secondary_backup_dir}" ]; then
+			rm -rf ${secondary_backup_dir}
+		mv -v ${primary_backup_dir} ${secondary_backup_dir}
+	fi
+	
+}
+
+function create_backup(){
+	# create a backup of the given directory
+	cp -r ${dir_path} ${primary_backup_dir}
+}
+
+verify_argument
+verify_dir_exists
+prepare_for_backup
+create_backup
