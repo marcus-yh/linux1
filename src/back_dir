@@ -1,8 +1,7 @@
 #!/bin/bash
 # back_dir
 
-set -e
-#set -ux
+set -eux
 set -o pipefail
 
 # Övning 4.1:
@@ -25,12 +24,14 @@ set -o pipefail
 #       om något går fel. Du kan använda cp kommandot med lämpliga flaggor för att kopiera
 #       katalogen och visa kopieringsprogress
 
-dir_path=$(realpath $1)
+script_path=$0
+dir_path=${1%/:-null} # trim trailing slash
+ 
 
 function verify_argument(){
 	# verify that the script is called with an argument
 	if [ -z "${dir_path}" ];then
-		echo "Script called without 'dir_path' argument!"
+		echo "Script ${script_path} called without 'dir_path' argument!" >&2
 		exit 1
 	fi
 }
@@ -38,15 +39,15 @@ function verify_argument(){
 function verify_dir_exists(){
 	# verify that specified directory path exist
 	if [ ! -d "${dir_path}" ]; then
-		echo "Directory ${dir_path} does not exist or is not a directory!" >&2
+		echo "Specified path ${dir_path} is not a directory!" >&2
 		exit 1
 	fi
 }
 
 function prepare_for_backup(){
 	# check if existing backup directories already exist
-	primary_backup_dir="${dir_path}"
-	secondary_backup_dir="${dir_path}2"
+	primary_backup_dir="${dir_path}.bak"
+	secondary_backup_dir="${primary_backup_dir}2"
 	if [ -d "${primary_backup_dir}" ]; then
 		if [ -d "${secondary_backup_dir}" ]; then
 			rm -rf ${secondary_backup_dir}
