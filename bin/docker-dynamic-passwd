@@ -1,0 +1,16 @@
+#!/bin/bash
+set -eux
+
+# define what group and passwd files to use
+NSS_WRAPPER_PASSWD=/tmp/passwd.nss_wrapper
+NSS_WRAPPER_GROUP=/etc/group
+
+# create new and "dynamic" passwd file based upon /etc/passwd
+sed "s/^${USER_NAME}:/builder:/" /etc/passwd >"${NSS_WRAPPER_PASSWD}"
+echo "${USER_NAME}:x:$(id -u):${GROUP_ID_BUILDER}:${FULL_NAME},,,:/home/${USER_NAME}:${DEFAULT_SHELL}" \
+    >>"${NSS_WRAPPER_PASSWD}"
+
+# export nss environment vars
+export NSS_WRAPPER_PASSWD
+export NSS_WRAPPER_GROUP
+export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libnss_wrapper.so

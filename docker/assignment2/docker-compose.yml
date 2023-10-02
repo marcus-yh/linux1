@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  assignment2:
+    build:
+      context: ../..
+      dockerfile: ./docker/assignment2/Dockerfile
+    environment:
+      - ./docker/assignment2/.env
+    image: ${IMAGE_NAME}
+    container_name: ${SERVICE_NAME}
+    volumes:
+      - ../..:${WORKDIR}
+    working_dir: ${WORKDIR}
+    user: ${USER_ID}

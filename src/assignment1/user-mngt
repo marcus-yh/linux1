@@ -1,0 +1,146 @@
+#!/bin/bash
+#user-mgr
+
+# set options
+set -eu
+set -o pipefail
+
+# initialize global variabels
+csv_file=null
+gen_passwd=false
+
+# declare/initialize global constants
+readonly script_path=$(realpath "$0")
+readonly script_dir=$(dirname "${script_path}")
+readonly script_name=$(basename "${script_path}")
+readonly log_file=${script_dir}/${script_name}.log
+
+usage=$(
+	cat <<END
+
+Usage: 
+	${script_name} [-h|--help] [-p|--passwd] CSV-FILE
+	-h, --help:	Display this help and exit
+	-p, --passwd:	When this flag is specified a password will be set
+			for the user
+	CSV-FILE:	Path to an existing csv file including comma separated
+			data: <first-name>,<last-name>,<password>,<add/remove>
+Examples:
+	Manage users without creating passwords for new users:	${script_name} ~/users.csv" 
+	Manage users and add password for new users:		${script_name} -p ~/users.csv"
+END
+)
+
+function usage() {
+	# output help text to stdout
+	echo "${usage}"
+}
+
+function log() {
+	msg="$1"
+
+	# format a message so that it is prepended with a timestamp and redirect to stderr
+	printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S.%3N')" "${msg}" >&2
+}
+
+function encrypt_passwd() {
+	local username="$1"
+	local passwd="$2"
+
+	# output 'Generating hash for <username>' to stderr
+	log "Generating hash for ${username}"
+	passwd=$(mkpasswd -m SHA-512 "${passwd}")
+	echo \'"${passwd}"\'
+}
+
+function add() {
+	local fname="$1"
+	local lname="$2"
+	local passwd="${3:-null}"
+	local username=${fname:0:3}${lname:0:3}
+
+	# build command
+	cmd="useradd --comment \"${fname} ${lname}\""
+	if [ -n "${passwd}" ]; then
+		cmd+=" -p $(encrypt_passwd "${username}" "${passwd}") ${username}"
+	else
+		cmd+=" \"${username}\" && passwd -e \"${username}\""
+	fi
+
+	# execute command
+	if eval "${cmd}" 2>&1; then
+		# success => output "Add <username>" to stdout and logfile
+		log "Add ${username}" 2>&1 | tee -a "${log_file}"
+	else
+		# error => output error message to stderr
+		log "Error while adding user ${username}: "
+	fi
+}
+
+function remove() {
+	local fname="$1"
+	local lname="$2"
+	local username=${fname:0:3}${lname:0:3}
+
+	# remove user
+	if userdel "${username}"; then
+		# success => output "Remove <username>" to stdout and logfile
+		log "Remove ${username}" 2>&1 | tee "${log_file}"
+	else
+		# error => output error to stderr
+		log "Error while removing user ${username}"
+	fi
+}
+
+function update_users() {
+	# redirect <csv_file> to stdin and process/parse the csv data at
+	# each line into variables
+	while IFS=, read -r fname lname passwd func; do
+		cmd="${func} ${fname} ${lname}"
+		if [[ ${gen_passwd} && "${func}" == "add" ]]; then
+			cmd+=" ${passwd}"
+		fi
+		# execute command
+		${cmd}
+	done <"${csv_file}"
+}
+
+# process/validate script args and flags
+while [ $# -gt 0 ]; do
+	case "$1" in
+	-h | --help)
+		usage
+		exit 0
+		;;
+	-p | --passwd)
+		gen_passwd=true
+		shift
+		;;
+	-*)
+		echo "Invalid_option $1"
+		usage
+		exit 1
+		;;
+	*)
+		csv_file="$1"
+		break
+		;;
+	esac
+done
+
+# validate that the sript is called with exactly one parameter
+if [ $# -gt 1 ]; then
+	echo "Script '${script_name}' must be called with exactly one argument!"
+	exit 1
+elif [ "$csv_file" = null ]; then
+	echo "Missing required <CSV-FILE> argument!"
+	exit 1
+fi
+
+# validate that specified <CSV-FILE> argument is a file
+if [ ! -f "${csv_file}" ]; then
+	echo "Specified path '${csv_file}' is not a file!"
+	exit 1
+fi
+
+update_users

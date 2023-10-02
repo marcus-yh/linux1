@@ -1,13 +1,40 @@
 version: '3.8'
 services:
-  debian:
+  assignment1:
     build:
       context: .
+      dockerfile: ./docker/assignment1/Dockerfile
     environment:
-      - .env
+      - ./docker/assignment1/.env
+    image: ${IMAGE_NAME}
+    container_name: ${SERVICE_NAME}
+    volumes:
+      - ${PWD}:${WORKDIR}
+      - ${PWD}/keys/docker-user:${HOME}/.ssh/authorized_keys
+    working_dir: ${WORKDIR}
+    user: ${USER_ID}
+
+  assignment2:
+    build:
+      context: .
+      dockerfile: Dockerfile.assignment1
+    environment:
+      - assignment2.env
     image: ${IMAGE_NAME}
     container_name: ${SERVICE_NAME}
     volumes:
       - ${PWD}:${WORKDIR}
     working_dir: ${WORKDIR}
 
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    environment:
+      - test.env
+    image: ${IMAGE_NAME}
+    container_name: ${SERVICE_NAME}
+    volumes:
+      - ${PWD}:${WORKDIR}
+    working_dir: ${WORKDIR}
+    user: ${USER_ID}

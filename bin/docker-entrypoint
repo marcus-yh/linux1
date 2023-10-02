@@ -1,6 +1,18 @@
-#!/usr/bin/bash
-set -eux
-set -o pipefail
+#!/bin/sh
+set -eu
 
+# set home directory if root
+if [ "$(id -u)" -eq 0 ]; then
+    export HOME='/root'
+else
+    export HOME="/home/${USER_NAME}"
+fi
 
-exec "$@"
+# create dynamic passwd if not running container with uid as builder or root
+# and export required environment variables
+if [ "$(id -u)" -ne 0 ] && [ "$(id -u)" -ne "${USER_ID_BUILDER}" ]; then
+    . "${APP_DIR}/bin/docker-dynamic-passwd"
+fi
+
+# execute commands
+exec "${@}"

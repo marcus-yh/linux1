@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+
+for d in "$@"
+do
+    chmod -R go+rw "${d}"
+    find "${d}" \( -type d -o type f -perm -u+x \) -not -perm -go+x -print0 | \
+        xargs -0tr chmod go+x
+done    
+
+
