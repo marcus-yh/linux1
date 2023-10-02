@@ -1,0 +1,31 @@
+#!/bin/bash
+#user-mgr
+
+
+readonly user_file=./users.csv
+readonly log_file=./.log
+readonly usage=$(cat <<-END
+        TBD
+END
+)
+
+function help(){
+        echo "${usage}"
+}
+
+function read_user_file(){
+	cat ${log_file} |
+}
+
+function add_user(){
+	useradd 
+}
+
+function remove_user(){
+}
+
+function configure_log(){
+	tee ${logfile}
+}
+
+
