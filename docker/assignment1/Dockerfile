@@ -20,10 +20,6 @@ ENV USER_ID_BUILDER=60000
 ENV GROUP_ID_BUILDER=0
 ENV DEFAULT_SHELL=/bin/bash
 
-# create nsswrapper.conf for dynamic uid
-#RUN echo "passwd: files nss_wrapper" > /etc/nsswrapper.conf
-#echo "group: files nss_wrapper" >> /etc/nsswrapper.conf
-
 # add group and user
 RUN adduser \
 	--disabled-password \
@@ -34,15 +30,11 @@ RUN adduser \
 	--gid ${GROUP_ID_BUILDER} \
 	${USER_NAME}
 
-
-
 # add user to sudoers
-#RUN echo "${USER_NAME} ALL=(ALL) NOPASSWD: /usr/sbin/user-mngt" \
-#	> /etc/sudoers.d/${USER_NAME} && \
+RUN echo "${USER_NAME} ALL=(ALL) NOPASSWD: /usr/sbin/user-mngt" \
+	> /etc/sudoers.d/${USER_NAME}
 #	chmod 0440 /etc/sudoers.d/${USER_NAME}
 #usermod -aG sudo ${USER_NAME} && \
-
-
 
 # create app dir, populate with startup scripts and fix permissions
 ENV APP_DIR /usr/src/app
@@ -56,12 +48,6 @@ RUN ${APP_DIR}/bin/docker-fix-permissions ${APP_DIR}
 
 # fix permissions on home directory
 RUN chmod -R 774 ${HOME}
-
-# ensure passwd is working together with lib-nsswrapper
-#RUN sed -i 's/passwd: *files/passwd:\t\tfiles nss_wrapper/' /etc/nsswitch.conf && \
-#	sed -i 's/group: *files/group:\t\tfiles nss_wrapper/' /etc/nsswitch.conf
-RUN sed -i 's/passwd: *files/passwd:\t\tfiles nss_wrapper/' /etc/nsswitch.conf
-#sed -i 's/group: *files/group:\t\tfiles nss_wrapper/' /etc/nsswitch.conf
 
 # add ${APP_DIR}/bin to PATH 
 ENV PATH=${APP_DIR}/bin:${PATH}
