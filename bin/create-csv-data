@@ -1,0 +1,6 @@
+#!/bin/bash
+set -eu
+
+data_dir="${APP_DIR}/data"
+mkdir -p "${data_dir}"
+(cd "${data_dir}" && seed)
