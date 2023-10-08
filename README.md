@@ -1,9 +1,15 @@
 # IFS2023 - linux1
 
+# Dependencies
+|Dependency|Installation instructions|
+|:---------|:--------------------------|
+| docker |https://docs.docker.com/engine/install/ |
+| docker-compose |https://docs.docker.com/compose/install/ |
+
 # Make commands
 
-| Command | Explanation |
-|---------|-------------|
+|Command|Explanation|
+|:--------|:--------|
 | ```make build``` | Build all docker containers for the linux1 class |
 |```make build-assignment1```| Build image for assignment 1 |
 |```make build-assignment2```| Build image for assignment 2 |
