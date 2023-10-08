@@ -1,7 +1,7 @@
 #!/usr/bin/make
 
 include .env
-USER_ID=$(shell id -u)
+USER_ID=60000
 GROUP_ID=60000
 export
 

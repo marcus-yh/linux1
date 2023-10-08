@@ -17,7 +17,7 @@ ENV USER_NAME=bobba
 ENV FULL_NAME='Bobba Fett'
 ENV HOME=/home/${USER_NAME}
 ENV USER_ID_BUILDER=60000
-ENV GROUP_ID_BUILDER=0
+ENV GROUP_ID_BUILDER=60000
 ENV DEFAULT_SHELL=/bin/bash
 
 # add group and user
@@ -27,14 +27,11 @@ RUN adduser \
 	--shell ${DEFAULT_SHELL} \
 	--gecos "${FULL_NAME}" \
 	--uid ${USER_ID_BUILDER} \
-	--gid ${GROUP_ID_BUILDER} \
 	${USER_NAME}
 
 # add user to sudoers
 RUN echo "${USER_NAME} ALL=(ALL) NOPASSWD: /usr/sbin/user-mngt" \
 	> /etc/sudoers.d/${USER_NAME}
-#	chmod 0440 /etc/sudoers.d/${USER_NAME}
-#usermod -aG sudo ${USER_NAME} && \
 
 # create app dir, populate with startup scripts and fix permissions
 ENV APP_DIR /usr/src/app

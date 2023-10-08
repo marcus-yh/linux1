@@ -12,3 +12,4 @@ services:
       - ../..:${WORKDIR}
     working_dir: ${WORKDIR}
     hostname: ${SERVICE_NAME}
+    user: ${USER_ID}:${GROUP_ID}
