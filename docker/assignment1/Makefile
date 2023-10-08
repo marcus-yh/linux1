@@ -12,3 +12,6 @@ build:
 .PHONY: run
 run:
 	docker-compose run assignment1
+
+test:
+	docker-compose run assignment1 ./test/functional-tests

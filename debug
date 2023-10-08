@@ -1,0 +1,9 @@
+#!/bin/bash
+
+sudo user-mngt -p ./data/inl1_data.csv >/tmp/stdout 2>/tmp/stderr
+echo "#################### log"
+cat /var/log/user-mngt.log
+echo "#################### stdout"
+cat /tmp/stdout
+echo "#################### stderr"
+cat /tmp/stderr
