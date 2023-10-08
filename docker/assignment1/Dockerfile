@@ -40,18 +40,21 @@ WORKDIR ${APP_DIR}
 COPY ./bin/docker-entrypoint ./bin/docker-entrypoint
 COPY ./bin/docker-dynamic-passwd ./bin/docker-dynamic-passwd
 COPY ./bin/docker-fix-permissions ./bin/docker-fix-permissions
+COPY ./bin/seed ./bin/seed
+COPY ./bin/create-csv-data ./bin/create-csv-data
 RUN ${APP_DIR}/bin/docker-fix-permissions ${APP_DIR}
 
 
 # fix permissions on home directory
 RUN chmod -R 774 ${HOME}
 
-# add ${APP_DIR}/bin to PATH 
-ENV PATH=${APP_DIR}/bin:${PATH}
+# fix path 
+ENV PATH=${PATH}:${APP_DIR}/bin
 
 # copy user-mgnt to sbin directory and set permissions
 COPY ./src/assignment1/user-mngt /usr/sbin/user-mngt
 RUN chmod 751 $(which user-mngt)
+
 # set default user
 USER ${USER_ID_BUILDER}
 
