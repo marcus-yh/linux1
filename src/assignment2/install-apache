@@ -1,0 +1,63 @@
+#!/bin/bash
+
+set -eux
+
+APT_DEPS=apache2
+
+sudo apt update && sudo apt install ${APT_DEPS}
+
+# configure firewall so that apache server is allowed to TBD
+# if not running in docker container
+#if [ ! -f /.dockerenv ]; then
+sudo ufw enable && sudo ufw allow 'Apache'
+#fi
+
+DOMAIN_NAME=marcus-yh
+DOMAIN_DIR="/var/www/${DOMAIN_NAME}"
+
+# create domain dir and set permissions
+sudo mkdir -p ${DOMAIN_DIR}
+sudo chown -R "${USER_NAME}:${USER_NAME}" ${DOMAIN_DIR}
+sudo chmod -R 755 ${DOMAIN_DIR}
+
+# define html code
+HTML_CODE="\
+    <html> \
+    <head> \
+    \t<title> IFS-2023 </title> \
+    <head> \
+    <body> \
+    \t<p> This page was created as a part of assignment 2 \
+    </body> \
+    </html>"
+
+# write html to index.html
+echo ${HTML_CODE} >"${DOMAIN_DIR}/index.html"
+
+# define configuration file content
+CONFIG=$(
+    cat <<END
+<VirtualHost *:80>
+    ServerAdmin marcus.brannvall@yh.nackademin.se
+    ServerName ${DOMAIN_NAME}
+    ServerAlias www.${DOMAIN_NAME}.local
+    DocumentRoot /var/www/${DOMAIN_NAME}
+    ErrorLog \${APACHE_LOG_DIR}/error.log
+    CustomLog \${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+END
+)
+
+echo "${CONFIG}" | sudo tee /etc/apache2/sites-available/${DOMAIN_NAME}.conf
+
+# enable the site
+sudo a2ensite ${DOMAIN_NAME}.conf
+
+# disable the default site
+sudo a2dissite 000-default.conf
+
+# verify that the syntax in the configuration file is correct
+sudo apache2ctl configtest
+
+# restart apache in order for config changes to take effect
+sudo systemctl restart apache2
