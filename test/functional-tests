@@ -60,3 +60,28 @@ while IFS=, read -r fname lname passwd func; do
         fi
     fi
 done <"${csv_file}"
+
+# Verify that:
+# 1)  When a user is added with success - "Add <username>" is printed to stdout and logfile
+# 1a) When a user add fails - "Error while adding <username>" is printed to stderr
+# 2)  When a user is removed with success -  "Remove <username>" is printed to stdout and logfile
+# 2a) When a user remove fails - "Error while removing <username>" is printed to stderr
+sudo user-mngt -p "${csv_file}" >"${stdout}" 2>"${stderr}"
+test $? -eq 0 || exit 1
+
+while IFS=, read -r fname lname passwd func; do
+    username="${fname:0:3}${lname:0:3}"
+    if [ "${func}" = "add" ]; then
+        if test "$(cat "${stdout}" | grep "Add ${username}")"; then
+            test "$(cat "${logfile}" | grep "Add ${username}")" || exit 1
+        else
+            test "$(cat "${stderr}" | grep "Error while adding user ${username}")" || exit 1
+        fi
+    elif [ "${func}" = "remove" ]; then
+        if test "$(cat "${stdout}" | grep "Remove ${username}")"; then
+            test "$(cat "${logfile}" | grep "Remove ${username}")" || exit 1
+        else
+            test "$(cat "${stderr}" | grep "Error while removing user ${username}")" || exit 1
+        fi
+    fi
+done <"${csv_file}"
