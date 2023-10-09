@@ -25,16 +25,3 @@ services:
     volumes:
       - ${PWD}:${WORKDIR}
     working_dir: ${WORKDIR}
-
-  test:
-    build:
-      context: .
-      dockerfile: Dockerfile.test
-    environment:
-      - test.env
-    image: ${IMAGE_NAME}
-    container_name: ${SERVICE_NAME}
-    volumes:
-      - ${PWD}:${WORKDIR}
-    working_dir: ${WORKDIR}
-    user: ${USER_ID}
