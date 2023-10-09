@@ -15,6 +15,7 @@
 |```make build-assignment2```| Build image for assignment 2 |
 |```make run-assignment1```| Run container for assignment 1 |
 |```make run-assignment2```| Run container for assignment 2 |
+|```make test-assignment1```| Run container for assignment 2 |
 
 # Assignments
 The handin assigments of the class are found in the 'src' folder of the repository
