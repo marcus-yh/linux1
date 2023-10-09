@@ -19,6 +19,12 @@ ENV HTML_CODE \
 RUN apt update && \
     apt install -y ${APT_DEPS}
 
+# enable firewall and open port 80
+RUN ufw enable && \
+    ufw allow 'Apache'
+    ufw allow 80
+
+
 # create config file from default and adjust settings
 #
 # 1) cd into the sites-available directory
@@ -31,17 +37,17 @@ RUN apt update && \
 # Using shell commands for cd and copy here in order to reflect a regular
 # host installation
 RUN cd /etc/apache2/sites-available && \
-    cp 000-default.conf gci.conf && \
-    sed -i 's/^.*ServerAdmin .*$/\tServerAdmin marcus.brannvall@yh.nackademin.se/' gci.conf && \
-    sed -i 's/^.*DocumentRoot .*$/DocumentRoot /var/www/gci/' gci.conf && \
-    sed -i 's/<\/VirtualHost>/\tServerName marcus-yh.local\n<\/VirtualHost>/' gci.conf
+     cp 000-default.conf gci.conf && \
+     sed -i 's/^.*ServerAdmin .*$/\tServerAdmin marcus.brannvall@yh.nackademin.se/' gci.conf && \
+     sed -i 's/^.*DocumentRoot .*$/\tDocumentRoot \/var\/www\/gci\//' gci.conf && \
+     sed -i 's/<\/VirtualHost>/\tServerName marcus-yh.local\n<\/VirtualHost>/' gci.conf
 
 # create website dir and index.html
-RUN mkdir /var/www/gci && \
-    echo -e "${HTML_CODE}" > /var/www/gci/index.html
+RUN mkdir -p /var/www/marcus-yh && \
+    echo -e "${HTML_CODE}" > /var/www/marcus-yh/index.html
 
 # activate virtual host file
-RUN a2ensite /etc/apache2/site-available/gci.conf
+#RUN a2ensite /etc/apache2/sites-available/gci.conf
 
-
-CMD ["/bin/bash", "-c", "service apache2 reload"]
+CMD ["/bin/bash"]
+#CMD ["/bin/bash", "-c", "service apache2 reload"]

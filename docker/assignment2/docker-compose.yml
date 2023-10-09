@@ -12,3 +12,7 @@ services:
       - ../..:${WORKDIR}
     working_dir: ${WORKDIR}
     user: ${USER_ID}
+    ports:
+      - 80:80
+    hostname: assignment2
+    user: root
