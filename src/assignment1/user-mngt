@@ -35,14 +35,6 @@ function help() {
 	echo "${usage}"
 }
 
-#function log() {
-#	msg="$1"
-
-# format a message so that it is prepended with a timestamp and redirect to stderr
-#printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S.%3N')" "${msg}" >&2
-#	echo "${msg}" >&2
-#}
-
 function encrypt_passwd() {
 	local username="$1"
 	local passwd="$2"
@@ -60,16 +52,9 @@ function add() {
 	local username=${fname:0:3}${lname:0:3}
 
 	# build command
-	#cmd="useradd --comment \"${fname} ${lname}\""
-	#cmd="adduser --gecos '${fname} ${lname}' "
 	if [ "${passwd}" == null ]; then
 		cmd="adduser --disabled-login --gecos \"${fname} ${lname}\" --home /home/${username} ${username}"
-		# encrypt password
-		#passwd=$(encrypt_passwd "${username}" "${passwd}")
-		#cmd+=" -p ${passwd} ${username}"
 	else
-		# set password expired
-		#cmd+=" \"${username}\" && passwd -e \"${username}\""
 		passwd=$(encrypt_passwd "${username}" "${passwd}")
 		cmd="useradd --comment \"${fname} ${lname}\" -p ${passwd} ${username} -m --home /home/${username}"
 	fi
@@ -88,8 +73,6 @@ function remove() {
 	local fname="$1"
 	local lname="$2"
 	local username=${fname:0:3}${lname:0:3}
-
-	#echo "function remove: userdel ${username}"
 
 	# remove user
 	if id "${username}" >/dev/null; then
