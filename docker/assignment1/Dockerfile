@@ -16,8 +16,8 @@ RUN apt update && \
 ENV USER_NAME=bobba
 ENV FULL_NAME='Bobba Fett'
 ENV HOME=/home/${USER_NAME}
-ENV USER_ID_BUILDER=60000
-ENV GROUP_ID_BUILDER=60000
+ENV USER_ID_BUILDER=1000
+ENV GROUP_ID_BUILDER=1000
 ENV DEFAULT_SHELL=/bin/bash
 
 # add group and user
@@ -44,6 +44,9 @@ COPY ./bin/seed ./bin/seed
 COPY ./bin/create-csv-data ./bin/create-csv-data
 RUN ${APP_DIR}/bin/docker-fix-permissions ${APP_DIR}
 
+
+# change owner of /usr/src/app
+RUN chown -R ${USER_NAME} ${APP_DIR}
 
 # fix permissions on home directory
 RUN chmod -R 774 ${HOME}

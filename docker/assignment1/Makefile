@@ -1,8 +1,8 @@
 #!/usr/bin/make
 
 include .env
-USER_ID=60000
-GROUP_ID=60000
+USER_ID=1000
+GROUP_ID=1000
 export
 
 .PHONY: build
