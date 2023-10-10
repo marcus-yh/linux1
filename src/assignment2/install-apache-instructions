@@ -1,0 +1,77 @@
+# --- Handin assignment 2, Linux1 - IFRS2023 ---------------------------------------
+# The following instrucions describes the installation and configurations steps that
+# required to complete an apache installation. Besides the steps described below
+# the assignment also requires that a description of where logfiles of interest can
+# be found.
+#
+# Logfiles of interest:
+# 1) /var/log/apache2/access.log
+#
+#    With default configuration, this logfile includes all the requests that where
+#    made to the apache webserver
+#
+# 2) /var/log/apache2/error.log:
+#
+#    With default configuraion, this is the logfile where all errors are loged.
+#
+# ------------------------------------------------------------------------------------------
+
+# Install apache server
+sudo apt update
+sudo apt install apache2
+
+# Define site/domain name and where site related files will be placed
+SITES_DIR=/var/www
+SITE_NAME=my-site
+DOMAIN_DIR="${SITES_DIR}/${SITE_NAME}"
+
+# 1) Create domain dir
+# 2) Change owner of the sites dir from root to default logged in user
+# 3) Change permissions of the sites dir recusrively so that they become rwx-r-x-r-x
+sudo mkdir -p "${DOMAIN_DIR}"
+#sudo chown -R "${USER}:${USER}" "${SITES_DIR}"
+#sudo chmod -R 755 "${SITES_DIR}"
+
+# define html code
+HTML_CODE=$(
+    cat <<END
+<html>
+<head>
+    <title> IFS-2023 </title>
+<head>
+<body>
+    <p> This page was created as a part of assignment 2
+</body>
+</html>
+END
+)
+
+# Write html code to index.html
+echo "${HTML_CODE}" | sudo tee "${DOMAIN_DIR}/index.html"
+
+# Define apache configuration file content
+# Note: the site will be served on port 80
+APACHE_CFG=$(
+    cat <<END
+<VirtualHost *:80>
+    DocumentRoot ${DOMAIN_DIR}
+    ServerAdmin marcus.brannvall@yh.nackademin.se
+    ServerName ${SITE_NAME}
+    ServerAlias ${SITE_NAME}.local
+    ErrorLog \${APACHE_LOG_DIR}/error.log
+    CustomLog \${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+END
+)
+
+# Create the apache configuration file for the wordpress site
+echo "${APACHE_CFG}" | sudo tee /etc/apache2/sites-available/${SITE_NAME}.conf
+
+# Enable the site for apache server
+sudo a2ensite ${SITE_NAME}
+
+# Disable the default site
+sudo a2dissite 000-default.conf
+
+# Reload apache so that the configuration is activated
+sudo service apache2 reload
