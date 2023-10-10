@@ -1,0 +1,92 @@
+#!/bin/bash
+
+set -eux
+
+SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+
+sudo apt update
+sudo apt install apache2 ghostscript libapache2-mod-php mysql-server mysql-server php \
+    php-bcmath php-curl php-imagick php-intl php-json php-mbstring php-mysql php-xml php-zip
+
+DOMAIN_NAME=wordpress.local
+DOMAIN_DIR="/srv/www/${DOMAIN_NAME}"
+
+# create domain dir and set permissions
+sudo mkdir -p ${DOMAIN_DIR}
+sudo chown -R "${USER}:${USER}" ${DOMAIN_DIR}
+sudo chmod -R 755 ${DOMAIN_DIR}
+
+# enable the site
+sudo a2ensite ${DOMAIN_NAME}.conf
+
+# disable the default site
+sudo a2dissite 000-default.conf
+
+# verify that the syntax in the configuration file is correct
+sudo apache2ctl configtest
+
+# restart apache in order for config changes to take effect
+sudo systemctl restart apache2
+
+# Install wordpress
+# 1) create wordpress dir /srv/www
+# 2) change owner of the crated directory from root to www-data
+# 3) download and extract the downloaded archive to the created directory as user www-data
+sudo mkdir -p /srv/www
+sudo chown www-data: /srv/www
+curl https://wordpress.org/latest.tar.gz | sudo -u www-data tar zx -C /srv/www
+
+# define wordpress apache configuration
+WORDPRESS_CFG=$(
+    cat <<END
+<VirtualHost *:80>
+    DocumentRoot /srv/www/${DOMAIN_NAME}
+    <Directory /srv/www/${DOMAIN_NAME}>
+        Options FollowSymLinks
+        AllowOverride Limit Options FileInfo
+        DirectoryIndex index.php
+        Require all granted
+    </Directory>
+    <Directory /srv/www/wordpress/wp-content>
+        Options FollowSymLinks
+        Require all granted
+    </Directory>
+</VirtualHost>
+END
+)
+
+# create the apache configuration for the wordpress site
+echo "${WORDPRESS_CFG}" | sudo tee /etc/apache2/sites-available/wordpress.conf
+
+# enable the wordpress site
+sudo a2ensite wordpress
+
+# enable url rewrite WHAT IS THIS?
+sudo a2enmod rewrite
+
+# disable the default site
+sudo a2dissite 000-default
+
+# reload apache
+sudo service apache2 reload
+
+# create mysql database
+sudo mysql -u root
+
+# enable mysql
+sudo service mysql start
+
+# as user www-data - copy default database configuration file to a new one
+#sudo -u www-data cp /srv/www/wordpress/wp-config-sample.php /srv/www/wordpress/wp-config.php
+
+# as user www-data:
+# 1) replace 'database_name' with 'wordpress' in file /srv/www/wordpress/wp-config.php
+# 2) replace 'user_name with' with 'wordpress' in file /srv/www/wordpress/wp-config.php
+# 3) replace 'password_here' with 'MySuperSecretPassword' in file /srv/www/wordpress/wp-config.php
+echo Enter database password:
+password=$(read -r)
+sudo -u www-data cp ${SCRIPT_DIR}/wp-config.php /srv/www/wordpress/wp-config.php
+sudo -u www-data sed -i "s/<REPLACE_THIS>/${password}/" /srv/www/wordpress/wp-config.php
+#sudo -u www-data sed -i 's/database_name_here/wordpress/' /srv/www/wordpress/wp-config.php
+#sudo -u www-data sed -i 's/username_here/wordpress/' /srv/www/wordpress/wp-config.php
+#sudo -u www-data sed -i 's/password_here/MySuperSecretPassword/' /srv/www/wordpress/wp-config.php

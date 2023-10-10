@@ -2,14 +2,14 @@
 
 set -eux
 
-APT_DEPS=apache2
-
-sudo apt update && sudo apt install ${APT_DEPS}
+sudo apt update && apt install apache2
 
 # configure firewall so that apache server is allowed to TBD
 # if not running in docker container
 #if [ ! -f /.dockerenv ]; then
-sudo ufw enable && sudo ufw allow 'Apache'
+sudo ufw enable
+sudo ufw allow 'Apache'
+sudo ufw allow ssh
 #fi
 
 DOMAIN_NAME=marcus-yh
@@ -17,19 +17,22 @@ DOMAIN_DIR="/var/www/${DOMAIN_NAME}"
 
 # create domain dir and set permissions
 sudo mkdir -p ${DOMAIN_DIR}
-sudo chown -R "${USER_NAME}:${USER_NAME}" ${DOMAIN_DIR}
+sudo chown -R "${USER}:${USER}" ${DOMAIN_DIR}
 sudo chmod -R 755 ${DOMAIN_DIR}
 
 # define html code
-HTML_CODE="\
-    <html> \
-    <head> \
-    \t<title> IFS-2023 </title> \
-    <head> \
-    <body> \
-    \t<p> This page was created as a part of assignment 2 \
-    </body> \
-    </html>"
+HTML_CODE=$(
+    cat <<END
+<html>
+<head>
+    <title> IFS-2023 </title>
+<head>
+<body>
+    <p> This page was created as a part of assignment 2
+</body>
+</html>"
+END
+)
 
 # write html to index.html
 echo ${HTML_CODE} >"${DOMAIN_DIR}/index.html"

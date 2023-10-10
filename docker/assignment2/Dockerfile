@@ -1,53 +1,61 @@
-FROM ubuntu:23.10
+FROM ubuntu:22.04
 
 # apt dependencies
 ENV APT_DEPS \
-    apache2
-
-# define the html of page index.html
-ENV HTML_CODE \
-    <html> \
-    <head> \
-    \t<title> Linux4Ever </title> \
-    <head> \
-    <body> \
-    \t<p> This page was created as a part of assignment 2 \
-    </body> \
-    </html>
+    bash \
+    sudo \
+    ufw
 
 # install apt dependencies
 RUN apt update && \
     apt install -y ${APT_DEPS}
 
-# enable firewall and open port 80
-RUN ufw enable && \
-    ufw allow 'Apache'
-    ufw allow 80
+ENV PATH="${PATH}:/usr/sbin"
 
+# define user variables
+ENV USER_NAME=bobba
+ENV FULL_NAME='Bobba Fett'
+ENV HOME=/home/${USER_NAME}
+ENV USER_ID_BUILDER=1000
+ENV GROUP_ID_BUILDER=1000
+ENV DEFAULT_SHELL=/bin/bash
 
-# create config file from default and adjust settings
-#
-# 1) cd into the sites-available directory
-# 2) create a config file by copying the default config file
-# 3) replace the default server admin email in the config file by using sed
-# 4) configure the document root so that it points to the directory where the
-#    html files of the site are placed
-#
-# Note:
-# Using shell commands for cd and copy here in order to reflect a regular
-# host installation
-RUN cd /etc/apache2/sites-available && \
-     cp 000-default.conf gci.conf && \
-     sed -i 's/^.*ServerAdmin .*$/\tServerAdmin marcus.brannvall@yh.nackademin.se/' gci.conf && \
-     sed -i 's/^.*DocumentRoot .*$/\tDocumentRoot \/var\/www\/gci\//' gci.conf && \
-     sed -i 's/<\/VirtualHost>/\tServerName marcus-yh.local\n<\/VirtualHost>/' gci.conf
+# add group and user
+RUN adduser \
+    --disabled-password \
+    --home ${HOME} \
+    --shell ${DEFAULT_SHELL} \
+    --gecos "${FULL_NAME}" \
+    --uid ${USER_ID_BUILDER} \
+    ${USER_NAME}
 
-# create website dir and index.html
-RUN mkdir -p /var/www/marcus-yh && \
-    echo -e "${HTML_CODE}" > /var/www/marcus-yh/index.html
+# add user to sudoers
+RUN echo "${USER_NAME} ALL=(ALL) NOPASSWD: ALL" \
+    > /etc/sudoers.d/${USER_NAME}
 
-# activate virtual host file
-#RUN a2ensite /etc/apache2/sites-available/gci.conf
+# create app dir, populate with startup scripts and fix permissions
+ENV APP_DIR /usr/src/app
+RUN mkdir -p ${APP_DIR}
+WORKDIR ${APP_DIR}
+COPY ./bin/docker-entrypoint ./bin/docker-entrypoint
+COPY ./bin/docker-dynamic-passwd ./bin/docker-dynamic-passwd
+COPY ./bin/docker-fix-permissions ./bin/docker-fix-permissions
+RUN ${APP_DIR}/bin/docker-fix-permissions ${APP_DIR}
 
-CMD ["/bin/bash"]
-#CMD ["/bin/bash", "-c", "service apache2 reload"]
+# change owner of /usr/src/app
+RUN chown -R ${USER_NAME} ${APP_DIR}
+
+# fix permissions on home directory
+RUN chmod -R 774 ${HOME}
+
+# fix path 
+ENV PATH=${PATH}:${APP_DIR}/bin
+
+# set default user
+USER ${USER_ID_BUILDER}
+
+# add default entrypoint
+ENTRYPOINT ["docker-entrypoint"]
+
+# default command
+CMD ["/usr/bin/bash"]

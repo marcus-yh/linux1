@@ -1,0 +1,123 @@
+#!/bin/bash
+
+# Install apt dependencies needed for wordpress
+sudo apt update
+sudo apt install apache2 ghostscript libapache2-mod-php mysql-server mysql-server php \
+    php-bcmath php-curl php-imagick php-intl php-json php-mbstring php-mysql php-xml php-zip
+
+# define domain name and where site related files will be placed
+DOMAIN_NAME=wordpress.local
+DOMAIN_DIR="/var/www/${DOMAIN_NAME}"
+
+# 1) create domain dir
+# 2) change owner of the domain dir from root to the logged in user
+# 3) change permissions recusrively so that become rwx-r-x-r-x
+sudo mkdir -p ${DOMAIN_DIR}
+sudo chown -R "${USER}:${USER}" ${DOMAIN_DIR}
+sudo chmod -R 755 ${DOMAIN_DIR}
+
+# define configuration file content for wordpress site
+CONFIG=$(
+    cat <<END
+<VirtualHost *:80>
+    ServerAdmin marcus.brannvall@yh.nackademin.se
+    ServerName ${DOMAIN_NAME}
+    ServerAlias www.${DOMAIN_NAME}.local
+    DocumentRoot /var/www/${DOMAIN_NAME}
+    ErrorLog \${APACHE_LOG_DIR}/error.log
+    CustomLog \${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+END
+)
+
+# create the wordpress configuration
+echo "${CONFIG}" | sudo tee /etc/apache2/sites-available/${DOMAIN_NAME}.conf
+
+# enable the site
+sudo a2ensite ${DOMAIN_NAME}.conf
+
+# disable the default site
+sudo a2dissite 000-default.conf
+
+# verify that the syntax in the configuration file is correct
+sudo apache2ctl configtest
+
+# restart apache in order for config changes to take effect
+sudo systemctl restart apache2
+
+# Install wordpress
+# 1) create wordpress dir
+# 2) change owner of the /src/www directory from root to www-data
+# 3) download and extract the downloaded archive to the created directory as user www-data
+sudo mkdir -p /srv/www
+sudo chown www-data: /srv/www
+curl https://wordpress.org/latest.tar.gz | sudo -u www-data tar zx -C /srv/www
+
+# Define wordpress configuration file content
+# Note: the site will be served on port 80
+WORDPRESS_CFG=$(
+    cat <<END
+<VirtualHost *:80>
+    DocumentRoot /srv/www/wordpress
+    <Directory /srv/www/wordpress>
+        Options FollowSymLinks
+        AllowOverride Limit Options FileInfo
+        DirectoryIndex index.php
+        Require all granted
+    </Directory>
+    <Directory /srv/www/wordpress/wp-content>
+        Options FollowSymLinks
+        Require all granted
+    </Directory>
+</VirtualHost>
+END
+)
+
+# create the apache configuration for the wordpress site
+echo "${WORDPRESS_CFG}" | sudo tee /etc/apache2/sites-available/wordpress.conf
+
+# enable the wordpress site for apache server
+sudo a2ensite wordpress
+
+# enable rewrite module of apache server
+# Note: The rewrite module rewrites
+sudo a2enmod rewrite
+
+# disable the default site for the apache server
+sudo a2dissite 000-default
+
+# reload apache configuration
+sudo service apache2 reload
+
+# run mysql as root
+sudo mysql -u root
+
+# manually create a wordpress database by entering the
+# following in the mysql console
+# Note: <MY_PASSWORD> shall be replaced with your password
+mysql >CREATE DATABASE wordpress
+mysql >CREATE USER wordpress@localhost IDENTIFIED BY '<MY_PASSWORD>'
+mysql >GRANT SELECT,INSERT,UPDATE,DELETE,CREATE,DROP,ALTER
+- >ON wordpress.*
+- >TO wordpress@localhost
+mysql >FLUSH PRIVILEGES
+mysql >quit
+
+# enable mysql service
+sudo service mysql start
+
+# as user www-data - copy default database configuration file to a new one
+#sudo -u www-data cp /srv/www/wordpress/wp-config-sample.php /srv/www/wordpress/wp-config.php
+
+# FIX THIS SECTION
+# as user www-data:
+# 1) replace 'database_name' with 'wordpress' in file /srv/www/wordpress/wp-config.php
+# 2) replace 'user_name with' with 'wordpress' in file /srv/www/wordpress/wp-config.php
+# 3) replace 'password_here' with 'MySuperSecretPassword' in file /srv/www/wordpress/wp-config.php
+echo Enter database password:
+password=$(read -r)
+sudo -u www-data cp ${SCRIPT_DIR}/wp-config.php /srv/www/wordpress/wp-config.php
+sudo -u www-data sed -i "s/<REPLACE_THIS>/${password}/" /srv/www/wordpress/wp-config.php
+#sudo -u www-data sed -i 's/database_name_here/wordpress/' /srv/www/wordpress/wp-config.php
+#sudo -u www-data sed -i 's/username_here/wordpress/' /srv/www/wordpress/wp-config.php
+#sudo -u www-data sed -i 's/password_here/MySuperSecretPassword/' /srv/www/wordpress/wp-config.php
